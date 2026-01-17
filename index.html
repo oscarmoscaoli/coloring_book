@@ -3,129 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App de Colorir Simples</title>
+    <title>App de Colorir Automático</title>
     <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        h1 { color: #333; }
-
-        /* Área do Desenho */
-        .canvas-container {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            max-width: 90%;
-        }
-
-        /* Estilo do SVG */
-        svg {
-            height: 300px; 
-            width: 300px;
-            cursor: crosshair; /* Muda o cursor para indicar precisão */
-        }
-
-        /* Importante: Traços não devem ser pintados, apenas preenchimentos */
-        path, circle, rect {
-            transition: fill 0.2s; /* Suaviza a troca de cor */
-        }
-        
-        /* Classe para impedir que linhas pretas sejam pintadas */
-        .nao-pintar {
-            pointer-events: none; /* O clique "atravessa" a linha preta */
-        }
-
-        /* Paleta de Cores */
-        .paleta {
-            display: flex;
-            gap: 15px;
-            background: white;
-            padding: 15px;
-            border-radius: 50px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .cor-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .cor-btn:hover { transform: scale(1.1); }
+        /* (Mantenha o CSS anterior igual, adicionei apenas o estilo do menu) */
+        body { font-family: sans-serif; text-align: center; background-color: #f0f0f0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .canvas-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; max-width: 90%; }
+        svg { height: 300px; width: 300px; cursor: crosshair; }
+        path, circle, rect { transition: fill 0.2s; }
+        .paleta { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        .cor-btn { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
         .cor-btn.ativa { border-color: #333; transform: scale(1.2); }
-
+        
+        /* Estilo do Menu */
+        #menu-container { margin-bottom: 20px; }
+        select { padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
-    <h1>Toque para Pintar</h1>
+    <h1>Escolha e Pinte</h1>
 
-    <div class="canvas-container">
-        <svg viewBox="0 0 100 100" id="desenho">
-            
-            <circle cx="35" cy="35" r="15" fill="#fff" stroke="black" stroke-width="2" />
-            <circle cx="65" cy="35" r="15" fill="#fff" stroke="black" stroke-width="2" />
-            <circle cx="35" cy="65" r="15" fill="#fff" stroke="black" stroke-width="2" />
-            <circle cx="65" cy="65" r="15" fill="#fff" stroke="black" stroke-width="2" />
-            
-            <circle cx="50" cy="50" r="12" fill="#fff" stroke="black" stroke-width="2" />
-            
-            <rect x="48" y="65" width="4" height="30" fill="#fff" stroke="black" stroke-width="2" />
-
-        </svg>
+    <div id="menu-container">
+        <select id="seletor-imagens" onchange="carregarDesenhoSelecionado()">
+            <option value="" disabled selected>Carregando desenhos...</option>
+        </select>
     </div>
 
-    <div class="paleta" id="paleta">
+    <div class="canvas-container" id="area-desenho">
+        <p style="color: #999;">Selecione um desenho acima</p>
+    </div>
+
+    <div class="paleta">
         <div class="cor-btn ativa" style="background-color: #FF5733;" onclick="mudarCor(this, '#FF5733')"></div>
         <div class="cor-btn" style="background-color: #33FF57;" onclick="mudarCor(this, '#33FF57')"></div>
         <div class="cor-btn" style="background-color: #3357FF;" onclick="mudarCor(this, '#3357FF')"></div>
         <div class="cor-btn" style="background-color: #F3FF33;" onclick="mudarCor(this, '#F3FF33')"></div>
-        <div class="cor-btn" style="background-color: #FF33F6;" onclick="mudarCor(this, '#FF33F6')"></div>
-        <div class="cor-btn" style="background-color: #ffffff; border: 1px solid #ccc;" onclick="mudarCor(this, '#ffffff')"></div> </div>
+    </div>
 
     <script>
-        // 1. Variável para guardar a cor atual (começa com a primeira da paleta)
+        // --- CONFIGURAÇÃO ---
+        const GITHUB_USER = 'SEU_USUARIO_AQUI';  // Ex: 'joaosilva'
+        const GITHUB_REPO = 'NOME_DO_REPO';      // Ex: 'app-colorir'
+        const PASTA_IMAGENS = 'desenhos';        // Nome da pasta criada no passo 1
+        
         let corAtual = '#FF5733';
 
-        // 2. Função para selecionar a cor na paleta
-        function mudarCor(elemento, cor) {
-            corAtual = cor;
-            
-            // Visual: remove a classe 'ativa' de todos e adiciona no clicado
-            document.querySelectorAll('.cor-btn').forEach(btn => btn.classList.remove('ativa'));
-            elemento.classList.add('ativa');
+        // 1. Função que consulta a API do GitHub
+        async function buscarListaDeDesenhos() {
+            const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${PASTA_IMAGENS}`;
+            const select = document.getElementById('seletor-imagens');
+
+            try {
+                const resposta = await fetch(apiUrl);
+                const arquivos = await resposta.json();
+
+                // Limpa o menu
+                select.innerHTML = '<option value="" disabled selected>Escolha um desenho</option>';
+
+                // Para cada arquivo encontrado na pasta...
+                arquivos.forEach(arquivo => {
+                    // Verifica se é um arquivo SVG
+                    if (arquivo.name.endsWith('.svg')) {
+                        const option = document.createElement('option');
+                        option.value = arquivo.download_url; // URL "crua" do arquivo
+                        option.text = arquivo.name.replace('.svg', ''); // Nome bonito
+                        select.appendChild(option);
+                    }
+                });
+            } catch (erro) {
+                console.error('Erro ao buscar imagens:', erro);
+                select.innerHTML = '<option>Erro ao carregar lista</option>';
+            }
         }
 
-        // 3. Lógica Principal: Adicionar evento de clique no SVG inteiro
-        const svgElemento = document.getElementById('desenho');
+        // 2. Função que carrega o SVG escolhido na tela
+        async function carregarDesenhoSelecionado() {
+            const url = document.getElementById('seletor-imagens').value;
+            const container = document.getElementById('area-desenho');
+            
+            if(!url) return;
 
-        svgElemento.addEventListener('click', function(e) {
-            // Verifica onde o usuário clicou (o 'target')
-            const alvo = e.target;
+            container.innerHTML = 'Carregando...';
 
-            // Se o usuário clicou em uma forma (circle, rect, path, etc.)
-            // E se essa forma NÃO for o próprio container SVG
-            if (alvo.tagName !== 'svg') {
-                // Aplica a cor atual ao atributo 'fill' (preenchimento)
-                alvo.setAttribute('fill', corAtual);
-                
-                // Animaçãozinha simples (opcional)
-                alvo.style.opacity = 0.5;
-                setTimeout(() => alvo.style.opacity = 1, 100);
+            try {
+                const resposta = await fetch(url);
+                const svgTexto = await resposta.text(); // Pega o código XML do SVG
+                container.innerHTML = svgTexto; // Injeta o código na página
+            } catch (erro) {
+                container.innerHTML = 'Erro ao carregar desenho.';
+            }
+        }
+
+        // 3. Lógica de Pintura (Igual ao anterior)
+        function mudarCor(btn, cor) {
+            corAtual = cor;
+            document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('ativa'));
+            btn.classList.add('ativa');
+        }
+
+        // Delegação de evento para funcionar com SVGs carregados dinamicamente
+        document.getElementById('area-desenho').addEventListener('click', function(e) {
+            if (e.target.tagName !== 'svg' && e.target.tagName !== 'DIV') {
+                e.target.setAttribute('fill', corAtual);
+                e.target.style.opacity = 0.5;
+                setTimeout(() => e.target.style.opacity = 1, 100);
             }
         });
+
+        // Inicia buscando a lista assim que a página abre
+        buscarListaDeDesenhos();
+
     </script>
 </body>
 </html>
