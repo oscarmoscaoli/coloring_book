@@ -5,98 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coloring Book - Oscar Mosca</title>
     <style>
+        /* --- VARIÁVEIS DE CORES (MODO CLARO/ESCURO) --- */
+        :root {
+            --bg-body: #f4f4f9;
+            --bg-card: #ffffff;
+            --text-color: #333;
+            --shadow: rgba(0,0,0,0.1);
+            --border: #ccc;
+        }
+
+        /* MODO ESCURO (Ativado pela classe .dark-mode no body) */
+        body.dark-mode {
+            --bg-body: #1a1a1a;
+            --bg-card: #2d2d2d;
+            --text-color: #f0f0f0;
+            --shadow: rgba(0,0,0,0.5);
+            --border: #555;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
-            background-color: #f4f4f9;
+            background-color: var(--bg-body);
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
             margin: 0;
+            transition: background 0.3s, color 0.3s;
         }
 
-        h1 { color: #333; margin-bottom: 10px; }
-
-        /* Estilo do Menu */
-        #menu-container { margin-bottom: 20px; width: 100%; max-width: 400px; }
-        select { 
+        /* Cabeçalho com Botão Dark Mode */
+        header {
             width: 100%;
-            padding: 12px; 
-            font-size: 16px; 
-            border-radius: 8px; 
-            border: 1px solid #ccc; 
-            background: white;
-            cursor: pointer;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        /* Área do Desenho */
+        h1 { margin: 0; font-size: 1.5rem; }
+
+        .btn-toggle {
+            background: none;
+            border: 2px solid var(--text-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Menu */
+        #menu-container { width: 100%; max-width: 400px; margin-bottom: 10px; }
+        select { 
+            width: 100%; padding: 12px; font-size: 16px; 
+            border-radius: 8px; border: 1px solid var(--border); 
+            background: var(--bg-card); color: var(--text-color);
+        }
+
+        /* Área do Desenho (SEMPRE BRANCA PARA O PAPEL) */
         .canvas-container {
-            background: white;
+            background: white; /* Papel é sempre branco */
             padding: 10px;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px var(--shadow);
             margin-bottom: 20px;
             width: 90%;
-            max-width: 500px; /* Limita o tamanho em telas grandes */
+            max-width: 500px;
             min-height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
-        /* O SVG deve se adaptar ao tamanho da tela */
         svg {
-            width: 100%;
-            height: auto;
-            max-height: 500px;
-            cursor: crosshair;
-            touch-action: manipulation; /* Melhora resposta ao toque no mobile */
+            width: 100%; height: auto; max-height: 500px;
+            cursor: crosshair; touch-action: manipulation;
         }
+        
+        /* Cursor personalizado quando a borracha está ativa */
+        .cursor-borracha svg { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" style="fill:none;stroke:black;stroke-width:2"><circle cx="10" cy="10" r="8"/></svg>') 10 10, auto; }
 
-        path, circle, rect, polygon, ellipse {
-            transition: fill 0.2s ease;
-        }
+        path, circle, rect, polygon, ellipse { transition: fill 0.2s ease; }
 
-        /* Paleta de Cores */
-        .paleta {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            background: white;
+        /* --- PALETA DE CORES COM SCROLL --- */
+        .paleta-container {
+            position: fixed;
+            bottom: 20px;
+            width: 90%;
+            max-width: 500px;
+            background: var(--bg-card);
             padding: 15px;
             border-radius: 20px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-            position: fixed; /* Fixa a paleta na parte inferior no mobile */
-            bottom: 20px;
+            box-shadow: 0 -4px 20px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
             z-index: 100;
         }
 
+        /* Borracha Fixa à Esquerda */
+        .borracha {
+            min-width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background-color: #f0f0f0;
+            border: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        .borracha.ativa { border-color: #333; background-color: #e0e0e0; transform: scale(1.1); }
+
+        /* Lista de Cores com Scroll Horizontal */
+        .cores-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto; /* Permite rolar para o lado */
+            padding-bottom: 5px;
+            width: 100%;
+            /* Esconde a barra de rolagem feia */
+            scrollbar-width: none; 
+        }
+        .cores-scroll::-webkit-scrollbar { display: none; }
+
         .cor-btn {
-            width: 45px;
-            height: 45px;
+            min-width: 45px; height: 45px;
             border-radius: 50%;
             border: 3px solid white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             cursor: pointer;
             transition: transform 0.2s;
         }
+        .cor-btn.ativa { border-color: #333; transform: scale(1.1); }
 
-        .cor-btn:active { transform: scale(0.9); }
-        .cor-btn.ativa { 
-            border-color: #333; 
-            transform: scale(1.1); 
-        }
-
-        /* Ajuste para não sobrepor o conteúdo com a paleta fixa */
-        .espaco-final { height: 100px; }
-
+        .espaco-final { height: 120px; }
     </style>
 </head>
 <body>
 
-    <h1>Coloring Book</h1>
+    <header>
+        <h1>🎨 Coloring Book</h1>
+        <button class="btn-toggle" onclick="alternarModo()">Modo Noturno 🌙</button>
+    </header>
 
     <div id="menu-container">
         <select id="seletor-imagens" onchange="carregarDesenhoSelecionado()">
@@ -110,111 +167,129 @@
 
     <div class="espaco-final"></div>
 
-    <div class="paleta">
-        <div class="cor-btn ativa" style="background-color: #FF5733;" onclick="mudarCor(this, '#FF5733')"></div>
-        <div class="cor-btn" style="background-color: #FFC300;" onclick="mudarCor(this, '#FFC300')"></div> <div class="cor-btn" style="background-color: #DAF7A6;" onclick="mudarCor(this, '#DAF7A6')"></div> <div class="cor-btn" style="background-color: #33FF57;" onclick="mudarCor(this, '#33FF57')"></div> <div class="cor-btn" style="background-color: #3357FF;" onclick="mudarCor(this, '#3357FF')"></div> <div class="cor-btn" style="background-color: #8E44AD;" onclick="mudarCor(this, '#8E44AD')"></div> <div class="cor-btn" style="background-color: #FFFFFF; border: 1px solid #ccc;" onclick="mudarCor(this, '#FFFFFF')"></div> </div>
+    <div class="paleta-container">
+        
+        <div class="borracha" onclick="ativarBorracha(this)" title="Borracha">
+            🧼
+        </div>
+
+        <div class="cores-scroll" id="lista-cores">
+            </div>
+    </div>
 
     <script>
-        // --- CONFIGURAÇÃO ATUALIZADA ---
+        // --- CONFIGURAÇÃO ---
         const GITHUB_USER = 'oscarmoscaoli';
         const GITHUB_REPO = 'coloring_book';
         const PASTA_IMAGENS = 'desenhos'; 
         
         let corAtual = '#FF5733';
+        
+        // --- GERAÇÃO DA PALETA DE CORES ---
+        const cores = [
+            '#FF5733', '#FF8D1A', '#FFC300', '#DAF7A6', '#33FF57', '#009933', // Quentes/Verdes
+            '#3357FF', '#33A1FF', '#33FFF6', '#8E44AD', '#FF33F6', '#FF3385', // Azuis/Roxos/Rosas
+            '#8B4513', '#D2691E', '#F4A460', '#000000', '#808080', '#D3D3D3'  // Terrosos/Cinzas
+        ];
 
-        // 1. Busca lista de arquivos no GitHub
+        const containerCores = document.getElementById('lista-cores');
+        
+        // Cria as bolinhas de cor automaticamente
+        cores.forEach((cor, index) => {
+            const btn = document.createElement('div');
+            btn.className = 'cor-btn';
+            if(index === 0) btn.classList.add('ativa'); // Ativa a primeira
+            btn.style.backgroundColor = cor;
+            btn.onclick = function() { mudarCor(this, cor); };
+            containerCores.appendChild(btn);
+        });
+
+        // --- FUNÇÕES ---
+
+        function mudarCor(btn, cor) {
+            corAtual = cor;
+            // Remove classe ativa de todos (inclusive borracha)
+            document.querySelectorAll('.cor-btn, .borracha').forEach(b => b.classList.remove('ativa'));
+            btn.classList.add('ativa');
+            
+            // Remove cursor de borracha
+            document.getElementById('area-desenho').classList.remove('cursor-borracha');
+        }
+
+        function ativarBorracha(btn) {
+            corAtual = '#FFFFFF'; // Pinta de branco
+            document.querySelectorAll('.cor-btn, .borracha').forEach(b => b.classList.remove('ativa'));
+            btn.classList.add('ativa');
+            
+            // Adiciona cursor visual de borracha (opcional)
+            document.getElementById('area-desenho').classList.add('cursor-borracha');
+        }
+
+        function alternarModo() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.btn-toggle');
+            if(document.body.classList.contains('dark-mode')) {
+                btn.textContent = 'Modo Claro ☀️';
+            } else {
+                btn.textContent = 'Modo Noturno 🌙';
+            }
+        }
+
+        // --- INTEGRAÇÃO GITHUB (Mantida igual) ---
         async function buscarListaDeDesenhos() {
-            // URL da API para ler o conteúdo da pasta
             const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${PASTA_IMAGENS}`;
             const select = document.getElementById('seletor-imagens');
 
             try {
                 const resposta = await fetch(apiUrl);
-                
-                if (!resposta.ok) throw new Error('Pasta não encontrada ou vazia');
-                
+                if (!resposta.ok) throw new Error('Erro na API');
                 const arquivos = await resposta.json();
 
                 select.innerHTML = '<option value="" disabled selected>Escolha um desenho</option>';
-
-                let encontrouSvg = false;
+                let encontrou = false;
                 arquivos.forEach(arquivo => {
                     if (arquivo.name.endsWith('.svg')) {
                         const option = document.createElement('option');
-                        // Atenção: Usamos download_url para pegar o arquivo "cru"
-                        option.value = arquivo.download_url; 
-                        option.text = arquivo.name.replace('.svg', '').replace(/-/g, ' '); // Remove .svg e hífens
+                        option.value = arquivo.download_url;
+                        option.text = arquivo.name.replace('.svg', '').replace(/-/g, ' ');
                         select.appendChild(option);
-                        encontrouSvg = true;
+                        encontrou = true;
                     }
                 });
-
-                if (!encontrouSvg) {
-                    select.innerHTML = '<option>Nenhum SVG encontrado na pasta "desenhos"</option>';
-                }
+                if(!encontrou) select.innerHTML = '<option>Nenhum SVG encontrado</option>';
 
             } catch (erro) {
                 console.error(erro);
-                select.innerHTML = `<option>Erro: Verifique se a pasta "${PASTA_IMAGENS}" existe</option>`;
+                select.innerHTML = `<option>Erro ao carregar lista</option>`;
             }
         }
 
-        // 2. Carrega o SVG e injeta no HTML
         async function carregarDesenhoSelecionado() {
             const url = document.getElementById('seletor-imagens').value;
             const container = document.getElementById('area-desenho');
-            
             if(!url) return;
-
             container.innerHTML = 'Carregando...';
-
             try {
                 const resposta = await fetch(url);
                 let svgTexto = await resposta.text();
-                
-                // Limpeza de segurança básica e injeção
                 container.innerHTML = svgTexto; 
-
-                // Ajuste forçado para garantir que o SVG ocupe o espaço
                 const svg = container.querySelector('svg');
                 if(svg) {
-                    svg.removeAttribute('width');
-                    svg.removeAttribute('height');
-                    svg.style.width = '100%';
-                    svg.style.height = 'auto';
+                    svg.removeAttribute('width'); svg.removeAttribute('height');
+                    svg.style.width = '100%'; svg.style.height = 'auto';
                 }
-
-            } catch (erro) {
-                container.innerHTML = 'Erro ao carregar o desenho.';
-            }
+            } catch (erro) { container.innerHTML = 'Erro ao carregar.'; }
         }
 
-        // 3. Lógica de Pintura
-        function mudarCor(btn, cor) {
-            corAtual = cor;
-            document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('ativa'));
-            btn.classList.add('ativa');
-        }
-
-        // Ouve cliques dentro da área de desenho
+        // Evento de Pintura
         document.getElementById('area-desenho').addEventListener('click', function(e) {
             const alvo = e.target;
-            
-            // Verifica se clicou em um elemento pintável (path, circle, etc)
-            // e ignora se clicou no fundo vazio (div ou svg container)
             if (alvo.tagName !== 'DIV' && alvo.tagName !== 'svg') {
-                
-                // Pinta
                 alvo.setAttribute('fill', corAtual);
-                alvo.style.fill = corAtual; // Força via CSS também para garantir
-
-                // Animação de feedback
-                alvo.style.opacity = 0.6;
-                setTimeout(() => alvo.style.opacity = 1, 150);
+                alvo.style.fill = corAtual; 
             }
         });
 
-        // Inicia o app
         buscarListaDeDesenhos();
 
     </script>
