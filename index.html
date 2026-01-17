@@ -3,25 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App de Colorir Automático</title>
+    <title>Coloring Book - Oscar Mosca</title>
     <style>
-        /* (Mantenha o CSS anterior igual, adicionei apenas o estilo do menu) */
-        body { font-family: sans-serif; text-align: center; background-color: #f0f0f0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .canvas-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; max-width: 90%; }
-        svg { height: 300px; width: 300px; cursor: crosshair; }
-        path, circle, rect { transition: fill 0.2s; }
-        .paleta { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
-        .cor-btn { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-        .cor-btn.ativa { border-color: #333; transform: scale(1.2); }
-        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 { color: #333; margin-bottom: 10px; }
+
         /* Estilo do Menu */
-        #menu-container { margin-bottom: 20px; }
-        select { padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; }
+        #menu-container { margin-bottom: 20px; width: 100%; max-width: 400px; }
+        select { 
+            width: 100%;
+            padding: 12px; 
+            font-size: 16px; 
+            border-radius: 8px; 
+            border: 1px solid #ccc; 
+            background: white;
+            cursor: pointer;
+        }
+
+        /* Área do Desenho */
+        .canvas-container {
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 500px; /* Limita o tamanho em telas grandes */
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* O SVG deve se adaptar ao tamanho da tela */
+        svg {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            cursor: crosshair;
+            touch-action: manipulation; /* Melhora resposta ao toque no mobile */
+        }
+
+        path, circle, rect, polygon, ellipse {
+            transition: fill 0.2s ease;
+        }
+
+        /* Paleta de Cores */
+        .paleta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            position: fixed; /* Fixa a paleta na parte inferior no mobile */
+            bottom: 20px;
+            z-index: 100;
+        }
+
+        .cor-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .cor-btn:active { transform: scale(0.9); }
+        .cor-btn.ativa { 
+            border-color: #333; 
+            transform: scale(1.1); 
+        }
+
+        /* Ajuste para não sobrepor o conteúdo com a paleta fixa */
+        .espaco-final { height: 100px; }
+
     </style>
 </head>
 <body>
 
-    <h1>Escolha e Pinte</h1>
+    <h1>Coloring Book</h1>
 
     <div id="menu-container">
         <select id="seletor-imagens" onchange="carregarDesenhoSelecionado()">
@@ -33,50 +108,58 @@
         <p style="color: #999;">Selecione um desenho acima</p>
     </div>
 
+    <div class="espaco-final"></div>
+
     <div class="paleta">
         <div class="cor-btn ativa" style="background-color: #FF5733;" onclick="mudarCor(this, '#FF5733')"></div>
-        <div class="cor-btn" style="background-color: #33FF57;" onclick="mudarCor(this, '#33FF57')"></div>
-        <div class="cor-btn" style="background-color: #3357FF;" onclick="mudarCor(this, '#3357FF')"></div>
-        <div class="cor-btn" style="background-color: #F3FF33;" onclick="mudarCor(this, '#F3FF33')"></div>
-    </div>
+        <div class="cor-btn" style="background-color: #FFC300;" onclick="mudarCor(this, '#FFC300')"></div> <div class="cor-btn" style="background-color: #DAF7A6;" onclick="mudarCor(this, '#DAF7A6')"></div> <div class="cor-btn" style="background-color: #33FF57;" onclick="mudarCor(this, '#33FF57')"></div> <div class="cor-btn" style="background-color: #3357FF;" onclick="mudarCor(this, '#3357FF')"></div> <div class="cor-btn" style="background-color: #8E44AD;" onclick="mudarCor(this, '#8E44AD')"></div> <div class="cor-btn" style="background-color: #FFFFFF; border: 1px solid #ccc;" onclick="mudarCor(this, '#FFFFFF')"></div> </div>
 
     <script>
-        // --- CONFIGURAÇÃO ---
-        const GITHUB_USER = 'SEU_USUARIO_AQUI';  // Ex: 'joaosilva'
-        const GITHUB_REPO = 'NOME_DO_REPO';      // Ex: 'app-colorir'
-        const PASTA_IMAGENS = 'desenhos';        // Nome da pasta criada no passo 1
+        // --- CONFIGURAÇÃO ATUALIZADA ---
+        const GITHUB_USER = 'oscarmosca';
+        const GITHUB_REPO = 'coloring_book';
+        const PASTA_IMAGENS = 'desenhos'; 
         
         let corAtual = '#FF5733';
 
-        // 1. Função que consulta a API do GitHub
+        // 1. Busca lista de arquivos no GitHub
         async function buscarListaDeDesenhos() {
+            // URL da API para ler o conteúdo da pasta
             const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${PASTA_IMAGENS}`;
             const select = document.getElementById('seletor-imagens');
 
             try {
                 const resposta = await fetch(apiUrl);
+                
+                if (!resposta.ok) throw new Error('Pasta não encontrada ou vazia');
+                
                 const arquivos = await resposta.json();
 
-                // Limpa o menu
                 select.innerHTML = '<option value="" disabled selected>Escolha um desenho</option>';
 
-                // Para cada arquivo encontrado na pasta...
+                let encontrouSvg = false;
                 arquivos.forEach(arquivo => {
-                    // Verifica se é um arquivo SVG
                     if (arquivo.name.endsWith('.svg')) {
                         const option = document.createElement('option');
-                        option.value = arquivo.download_url; // URL "crua" do arquivo
-                        option.text = arquivo.name.replace('.svg', ''); // Nome bonito
+                        // Atenção: Usamos download_url para pegar o arquivo "cru"
+                        option.value = arquivo.download_url; 
+                        option.text = arquivo.name.replace('.svg', '').replace(/-/g, ' '); // Remove .svg e hífens
                         select.appendChild(option);
+                        encontrouSvg = true;
                     }
                 });
+
+                if (!encontrouSvg) {
+                    select.innerHTML = '<option>Nenhum SVG encontrado na pasta "desenhos"</option>';
+                }
+
             } catch (erro) {
-                console.error('Erro ao buscar imagens:', erro);
-                select.innerHTML = '<option>Erro ao carregar lista</option>';
+                console.error(erro);
+                select.innerHTML = `<option>Erro: Verifique se a pasta "${PASTA_IMAGENS}" existe</option>`;
             }
         }
 
-        // 2. Função que carrega o SVG escolhido na tela
+        // 2. Carrega o SVG e injeta no HTML
         async function carregarDesenhoSelecionado() {
             const url = document.getElementById('seletor-imagens').value;
             const container = document.getElementById('area-desenho');
@@ -87,30 +170,51 @@
 
             try {
                 const resposta = await fetch(url);
-                const svgTexto = await resposta.text(); // Pega o código XML do SVG
-                container.innerHTML = svgTexto; // Injeta o código na página
+                let svgTexto = await resposta.text();
+                
+                // Limpeza de segurança básica e injeção
+                container.innerHTML = svgTexto; 
+
+                // Ajuste forçado para garantir que o SVG ocupe o espaço
+                const svg = container.querySelector('svg');
+                if(svg) {
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                    svg.style.width = '100%';
+                    svg.style.height = 'auto';
+                }
+
             } catch (erro) {
-                container.innerHTML = 'Erro ao carregar desenho.';
+                container.innerHTML = 'Erro ao carregar o desenho.';
             }
         }
 
-        // 3. Lógica de Pintura (Igual ao anterior)
+        // 3. Lógica de Pintura
         function mudarCor(btn, cor) {
             corAtual = cor;
             document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('ativa'));
             btn.classList.add('ativa');
         }
 
-        // Delegação de evento para funcionar com SVGs carregados dinamicamente
+        // Ouve cliques dentro da área de desenho
         document.getElementById('area-desenho').addEventListener('click', function(e) {
-            if (e.target.tagName !== 'svg' && e.target.tagName !== 'DIV') {
-                e.target.setAttribute('fill', corAtual);
-                e.target.style.opacity = 0.5;
-                setTimeout(() => e.target.style.opacity = 1, 100);
+            const alvo = e.target;
+            
+            // Verifica se clicou em um elemento pintável (path, circle, etc)
+            // e ignora se clicou no fundo vazio (div ou svg container)
+            if (alvo.tagName !== 'DIV' && alvo.tagName !== 'svg') {
+                
+                // Pinta
+                alvo.setAttribute('fill', corAtual);
+                alvo.style.fill = corAtual; // Força via CSS também para garantir
+
+                // Animação de feedback
+                alvo.style.opacity = 0.6;
+                setTimeout(() => alvo.style.opacity = 1, 150);
             }
         });
 
-        // Inicia buscando a lista assim que a página abre
+        // Inicia o app
         buscarListaDeDesenhos();
 
     </script>
